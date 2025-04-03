@@ -17,21 +17,30 @@
  */
 package com.graphhopper.application;
 
+import com.graphhopper.GraphHopper;
 import com.graphhopper.application.cli.ImportCommand;
 import com.graphhopper.application.cli.MatchCommand;
 import com.graphhopper.application.resources.RootResource;
 import com.graphhopper.http.CORSFilter;
 import com.graphhopper.http.GraphHopperBundle;
 import com.graphhopper.navigation.NavigateResource;
+import com.graphhopper.resources.LocalGeocodingResource;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.core.Application;
 import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
+import com.google.inject.Injector;
 
 import javax.servlet.DispatcherType;
 import java.util.EnumSet;
 
 public final class GraphHopperApplication extends Application<GraphHopperServerConfiguration> {
+    private final GraphHopperBundle graphHopperBundle;
+    private GraphHopper graphHopper;
+
+    public GraphHopperApplication() {
+        this.graphHopperBundle = new GraphHopperBundle();
+    }
 
     public static void main(String[] args) throws Exception {
         new GraphHopperApplication().run(args);
@@ -39,7 +48,7 @@ public final class GraphHopperApplication extends Application<GraphHopperServerC
 
     @Override
     public void initialize(Bootstrap<GraphHopperServerConfiguration> bootstrap) {
-        bootstrap.addBundle(new GraphHopperBundle());
+        bootstrap.addBundle(graphHopperBundle);  // Use the stored instance
         bootstrap.addCommand(new ImportCommand());
         bootstrap.addCommand(new MatchCommand());
         bootstrap.addBundle(new AssetsBundle("/com/graphhopper/maps/", "/maps/", "index.html"));
@@ -49,8 +58,16 @@ public final class GraphHopperApplication extends Application<GraphHopperServerC
 
     @Override
     public void run(GraphHopperServerConfiguration configuration, Environment environment) {
+        // Initialize GraphHopper
+        graphHopper = new GraphHopper();
+        graphHopper.init(configuration.getGraphHopperConfiguration());
+        // Important: load the graph after initialization
+        graphHopper.importOrLoad();
+        
         environment.jersey().register(new RootResource());
         environment.jersey().register(NavigateResource.class);
-        environment.servlets().addFilter("cors", CORSFilter.class).addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "*");
+        environment.jersey().register(new LocalGeocodingResource(graphHopper));
+        environment.servlets().addFilter("cors", CORSFilter.class)
+            .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "*");
     }
 }

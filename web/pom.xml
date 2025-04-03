@@ -37,6 +37,11 @@
             <artifactId>graphhopper-nav</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.graphhopper</groupId>
+            <artifactId>graphhopper-map-matching</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>io.dropwizard</groupId>
@@ -50,12 +55,17 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- for integration tests of service -->
+        <!-- for geocoding API -->
         <dependency>
             <groupId>com.graphhopper</groupId>
             <artifactId>directions-api-client-hc</artifactId>
             <version>${project.parent.version}</version>
-            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>5.1.0</version>
         </dependency>
 
     </dependencies>
